@@ -18,14 +18,28 @@ export class CognitoCdkSampleStack extends cdk.Stack {
             cognitoDomain: {domainPrefix: 'product-service'}
         });
 
-        let addProductScope = new cognito.ResourceServerScope({scopeName: "catalog-service:add-product", scopeDescription: "Add new products to the catalog"});
-        let listProductScope = new cognito.ResourceServerScope({scopeName: "catalog-service:list-product", scopeDescription: "Allows listing all products from the catalog"});
+        const addProductScope = new cognito.ResourceServerScope({scopeName: "catalog-service:add-product", scopeDescription: "Add new products to the catalog"});
+        const listProductScope = new cognito.ResourceServerScope({scopeName: "catalog-service:list-product", scopeDescription: "Allows listing all products from the catalog"});
 
-        userPool.addResourceServer('CatalogResourceServer', {
+        const catalogResourceServer = userPool.addResourceServer('CatalogResourceServer', {
             identifier: 'catalog-resource-server',
             scopes: [addProductScope, listProductScope]
         });
 
+
+        //Suggest to keep this out of the stack, let this be generated through the console or better still:
+        //build this into a custom UI to handle adding/removing clients
+        const userPoolClient = userPool.addClient('catalog-service-client', {
+            authFlows: {userPassword: true},
+            generateSecret: true,
+            preventUserExistenceErrors: false,
+            userPoolClientName: 'catalog-service-client',
+            oAuth: {
+                flows: {clientCredentials: true},
+                scopes: [ cognito.OAuthScope.resourceServer(catalogResourceServer, addProductScope),
+                          cognito.OAuthScope.resourceServer(catalogResourceServer, listProductScope) ]
+            }
+        });
 
         // Create an Output
         new cdk.CfnOutput(this, 'UserPoolUrl', {
@@ -35,6 +49,14 @@ export class CognitoCdkSampleStack extends cdk.Stack {
         new cdk.CfnOutput(this, 'UserPoolId', {
             value: userPool.userPoolId,
             description: 'The User pool id'
+        });
+        new cdk.CfnOutput(this, 'UserPoolClientId', {
+            value: userPoolClient.userPoolClientId,
+            description: 'The User pool client id'
+        });
+        new cdk.CfnOutput(this, 'UserPoolClientSecret', {
+            value: userPoolClient.userPoolClientSecret.unsafeUnwrap(),
+            description: 'The User pool client secret'
         });
 
     }
