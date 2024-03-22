@@ -1,0 +1,92 @@
+openapi: 3.0.3
+info:
+  version: "1.0.0"
+  title: Product catalog - OpenAPI 3.0.3
+  description: |-
+    APIs to manage the product catalog.
+tags:
+  - name: Product Catalog
+    description: Managing the product catalog
+    externalDocs:
+      description: Find out more
+      url: http://swagger.io
+
+paths:
+  /products/{productId}:
+    get:
+      tags:
+        - product
+      parameters:
+        - name: productId
+          in: path
+          schema:
+            type: string
+      summary: get product by id
+      description: get the specified product's details
+      operationId: getProductById
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+              examples:
+                sampleProduct:
+                  summary: sample product
+                  value:
+                    productId: 10095
+                    productName: Plush pink teddy bear
+                    productDescription: Medium sized teddy bear, deep pink with velvet finish
+                    productCategory:
+                      - Toys
+                      - Gifts
+                    launchDate: 2024-01-01
+        "404":
+          description: Product not found
+      x-amazon-apigateway-integration:
+        type: MOCK
+        passthroughBehavior: never
+        requestTemplates:
+          application/json: "{ #if( $input.params('productId') == \"9999\" ) \"statusCode\": 404 #else \"statusCode\": 200 #end }"
+        responses:
+          200:
+            statusCode: 200
+            responseTemplates:
+              application/json: "{\"productId\":\"10095\"}"
+          404:
+            statusCode: 404
+            responseTemplates:
+              application/json: "{\"message\":\"product not found\"}"
+
+
+components:
+  schemas:
+    Product:
+      type: object
+      required:
+        - productName
+        - productDescription
+      properties:
+        productId:
+          type: integer
+          format: int32
+          example: 1008
+        productName:
+          type: string
+          maxLength: 30
+          example: Dustin electric shaver S-500
+        productDescription:
+          type: string
+          maxLength: 100
+          example: 10k rpm, close shaver, 24 hours battery
+        productCategory:
+          type: array
+          items:
+            type: string
+          maxItems: 3
+          example: Electronics
+        launchDate:
+          type: string
+          format: date
+          example: 2020-12-14
